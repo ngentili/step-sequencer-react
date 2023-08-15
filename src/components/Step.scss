@@ -1,0 +1,28 @@
+.sequencer-step {
+    margin: 4px;
+    height: 30px;
+    // width: 20px;
+    border-radius: 2px;
+    background-color: white;
+    outline: 1px solid black;
+    display: inline-block;
+    flex: 1;
+}
+
+.sequencer-step:hover {
+    // background-color: orange;
+    outline: 1px solid orange;
+}
+
+.sequencer-step:active {
+    // background-color: orange;
+    // outline: 1px solid orange;
+}
+
+.enabled {
+    background-color: green;
+}
+
+.primary {
+    background-color: lightgrey;
+}
