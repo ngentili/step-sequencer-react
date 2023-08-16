@@ -11,17 +11,12 @@ interface ToolbarProps {
     playStopClicked: () => void
     resetClicked: () => void
 }
-interface ToolbarState {
-    playing: boolean
-}
 
 const DEFAULT_BPM = 100
 const DEFAULT_SWING = 0
 
 function Toolbar(props: ToolbarProps) {
-    const [state, setState] = useState<ToolbarState>({
-        playing: props.playing,
-    })
+    const [playing, setPlaying] = useState(props.playing)
 
     return (
         <div className='toolbar'>

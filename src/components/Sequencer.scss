@@ -12,8 +12,9 @@
 }
 
 .track-controls {
-    display: inline-block;
-    width: 275px;
+    display: flex;
+    flex-direction: row;
+    margin-right: 2%;
 }
 
 .track-label {
@@ -29,4 +30,13 @@
 .track-pan {
     width: 75px;
     margin-left: 10px;
+}
+
+.track-step-count {
+    width: 75px;
+    margin-left: 10px;
+}
+
+.step-track-container {
+    flex: 1;
 }

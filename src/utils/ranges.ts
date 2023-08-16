@@ -1,32 +1,25 @@
-export enum RangeEndType {
-    Inclusive,
-    Exclusive,
-}
-
 export function isInRange(value: number,
-    min: number, minType: RangeEndType,
-    max: number, maxType: RangeEndType) {
+    min: number, inclusiveMin: boolean,
+    max: number, inclusiveMax: boolean) {
 
-    if (minType == RangeEndType.Inclusive) {
-        if (value <= min) {
-            return false
-        }
-    }
-    else {
-        if (value < min) {
-            return false
-        }
+    if (isNaN(value) || isNaN(min) || isNaN(max) || min > max) {
+        throw new Error('Invalid range input')
     }
 
-    if (maxType == RangeEndType.Inclusive) {
-        if (value >= max) {
-            return false
-        }
+    if (inclusiveMin && value < min) {
+        return false
     }
-    else {
-        if (value > max) {
-            return false
-        }
+
+    if (!inclusiveMin && value <= min) {
+        return false
+    }
+
+    if (inclusiveMax && value > max) {
+        return false
+    }
+
+    if (!inclusiveMax && value >= max) {
+        return false
     }
 
     return true
