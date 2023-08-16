@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import 'sass';
 import './SequencerStepTrack.scss';
 
@@ -8,21 +8,21 @@ interface SequencerStepTrackProps {
     // output
     stepClicked: (index: number) => void
 }
-// interface SequencerStepTrackState { }
 
 function SequencerStepTrack(props: SequencerStepTrackProps) {
-    // const [state, setState] = useState<SequencerStepTrackState>({})
+
+    // console.log('render SequencerStepTrack')
 
     return (
         <div className='track-step-container'>
             {props.steps.map((enabled, i) => {
-                let interval = props.steps.length % 3 == 0 ? 3 : 4
+                let interval = props.steps.length % 3 === 0 ? 3 : 4
 
                 let className = 'sequencer-step'
                 if (enabled) {
                     className += ' enabled'
                 }
-                else if (i % interval == 0) {
+                else if (i % interval === 0) {
                     className += ' primary'
                 }
 

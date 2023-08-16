@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import 'sass';
 import './Toolbar.scss';
 
@@ -16,7 +16,8 @@ const DEFAULT_BPM = 100
 const DEFAULT_SWING = 0
 
 function Toolbar(props: ToolbarProps) {
-    const [playing, setPlaying] = useState(props.playing)
+
+    // console.log('render Toolbar')
 
     return (
         <div className='toolbar'>
