@@ -1,12 +1,5 @@
 export class AudioScheduler {
 
-    // singleton
-    private static _instance = new AudioScheduler()
-
-    static get instance() {
-        return AudioScheduler._instance
-    }
-
     // logic
     audioContext = new AudioContext()
     schedule = new Map<string, ScheduledAudio>()

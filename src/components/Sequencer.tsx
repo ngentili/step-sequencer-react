@@ -2,10 +2,7 @@ import React, { useState } from 'react';
 import 'sass';
 import './Sequencer.scss';
 import { StepTrack } from '../models/SequencerTrack';
-import Step from './Step';
-import { AudioScheduler } from '../services/AudioScheduler';
-
-const audioScheduler = AudioScheduler.instance
+import SequencerStepTrack from './SequencerStepTrack';
 
 interface SequencerProps {
     // input
@@ -13,6 +10,8 @@ interface SequencerProps {
     swing: number
     tracks: StepTrack[]
     playing: boolean
+    // output
+    stepClicked: (trackIndex: number, stepIndex: number) => void
 }
 interface SequencerState {
     bpm: number
@@ -26,17 +25,8 @@ function Sequencer(props: SequencerProps) {
         bpm: props.bpm,
         swing: props.swing,
         tracks: props.tracks,
-        loading: true,
+        loading: false,
     })
-
-    let unloadedTracks = state.tracks.filter(t => !audioScheduler.sampleBuffers.has(t.name))
-
-    Promise.all(unloadedTracks.map(track => audioScheduler.loadAudio(track.name, track.samplePath)))
-        .then(() => setState({ ...state, loading: false }))
-        .catch(err => {
-            console.error(err)
-            setState({ ...state, loading: false })
-        })
 
     function onTrackVolumeChange(value: number) {
         console.log(value)
@@ -52,8 +42,8 @@ function Sequencer(props: SequencerProps) {
 
     return (
         <div className='track-container'>
-            {state.tracks.map((track, i) => (
-                <div key={i} className='track'>
+            {state.tracks.map((track, ti) => (
+                <div key={ti} className='track'>
 
                     <div className='track-controls'>
                         <span className='track-label'>{track.name}</span>
@@ -66,18 +56,10 @@ function Sequencer(props: SequencerProps) {
                         </input>
                     </div>
 
-                    <div className='track-step-container'>
-                        {new Array(track.stepCount).fill(null).map((_, i) => {
-                            let interval = track.stepCount % 3 == 0 ? 3 : 4
-                            return (
-                                <Step
-                                    key={`${track.name}-${i}`}
-                                    primary={i % interval == 0}
-                                    enabled={false}
-                                ></Step>
-                            )
-                        })}
-                    </div>
+                    <SequencerStepTrack
+                        steps={track.steps}
+                        stepClicked={si => props.stepClicked(ti, si)}
+                    ></SequencerStepTrack>
                 </div>
             ))}
         </div>

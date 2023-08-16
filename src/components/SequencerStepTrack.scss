@@ -1,3 +1,10 @@
+.track-step-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-width: 500px;
+}
+
 .sequencer-step {
     margin: 4px;
     height: 30px;

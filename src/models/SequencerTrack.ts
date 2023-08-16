@@ -6,7 +6,7 @@ export interface Track {
 }
 
 export interface StepTrack extends Track {
-    stepCount: number
+    steps: boolean[]
 }
 
 export interface FreeTrack extends Track {
