@@ -4,9 +4,141 @@ import './App.scss';
 import Toolbar from './Toolbar';
 import Sequencer from './Sequencer';
 import { StepTrack } from '../models/SequencerTrack';
-import { AudioScheduler, SequencerAudio } from '../services/AudioScheduler';
+import { getLoopDuration } from '../utils/timing';
 
-const audioScheduler = new AudioScheduler()
+interface AudioLoop {
+  startTime: number
+  duration: number
+}
+
+interface ScheduledAudio {
+  trackName: string
+  // source: AudioBufferSourceNode
+  startTime: number
+  duration: number
+}
+
+const audioContext = new AudioContext()
+const sampleBuffers = new Map<string, AudioBuffer>()
+
+let nextLoopStartTime: number | undefined
+const schedule: ScheduledAudio[] = []
+let timer: NodeJS.Timer | undefined
+
+function doScheduling(bpm: number, swing: number, tracks: StepTrack[]) {
+  const audioLoopDuration = getLoopDuration(bpm)
+  const timeAheadToSchedule = audioLoopDuration * 3
+  const enterTime = audioContext.currentTime
+
+  // remove past audio
+  for (let i = 0; i < schedule.length; i++) {
+    const a = schedule[i]
+
+    // TODO if not currently playing
+    if (a.startTime < enterTime) {
+      schedule.splice(i, 1)
+    }
+  }
+
+  // if nothing scheduled, start from now
+  if (!nextLoopStartTime) {
+    nextLoopStartTime = enterTime
+  }
+
+  // schdule X loops ahead
+  let newScheduledCount: number
+  let loopIndex = 0
+
+  do {
+    newScheduledCount = 0
+
+    for (const track of tracks) {
+      const trackAudioBuffer = sampleBuffers.get(track.name)
+
+      if (!trackAudioBuffer) {
+        throw new Error('Audio buffer not found')
+      }
+
+      for (let stepIndex = 0; stepIndex < track.steps.length; stepIndex++) {
+        const stepEnabled = track.steps[stepIndex]
+
+        if (!stepEnabled) {
+          continue
+        }
+
+        const position = stepIndex / track.steps.length
+        const loopStartTime = nextLoopStartTime + loopIndex * audioLoopDuration
+        const offsetInLoop = position * audioLoopDuration
+        const startTime = loopStartTime + offsetInLoop
+
+        if (startTime > timeAheadToSchedule) {
+          console.log(`did not schedule, too far: ${track.name} ${startTime}`)
+          continue
+        }
+
+        // scheduledAudio(track.name, startTime, track.volume, track.pan, trackAudioBuffer)
+        console.log(`scheduled audio: ${track.name} ${startTime}`)
+        newScheduledCount++
+      }
+    }
+
+    loopIndex++
+  }
+  while (newScheduledCount > 0)
+
+}
+
+
+function scheduledAudio(trackName: string, startTime: number, volume: number, pan: number, sampleBuffer: AudioBuffer) {
+
+  if (schedule.find(s => s.trackName === trackName && s.startTime === startTime)) {
+    console.warn('audio already scheduled')
+    return
+  }
+
+  // gain
+  let gainNode = new GainNode(audioContext, { gain: volume })
+
+  // pan
+  let panNode = new PannerNode(audioContext, { positionX: pan })
+
+  // source
+  let sourceNode = new AudioBufferSourceNode(audioContext, { buffer: sampleBuffer })
+
+  // connections
+  sourceNode
+    .connect(panNode)
+    .connect(gainNode)
+    .connect(audioContext.destination)
+
+  // schedule audio
+  sourceNode.start(startTime)
+
+  schedule.push({
+    trackName,
+    duration: sampleBuffer.length,
+    startTime,
+  })
+}
+
+function startAudioLoop(bpm: number, swing: number, tracks: StepTrack[]) {
+  return audioContext.resume().then(() => {
+    timer = setInterval(() => doScheduling(bpm, swing, tracks), 250)
+  })
+}
+
+function stopAudioLoop() {
+  // unscheduleAll()
+  clearInterval(timer)
+  return audioContext.suspend()
+}
+
+function loadAudio(name: string, audioUrl: string): Promise<void> {
+  return fetch(audioUrl)
+    .then(res => res.arrayBuffer())
+    .then(data => audioContext.decodeAudioData(data))
+    .then(buffer => { sampleBuffers.set(name, buffer) })
+}
 
 const DEFAULT_PLAYING = false
 const DEFAULT_BPM = 100
@@ -16,28 +148,26 @@ const DEFAULT_TRACKS: StepTrack[] = [
     name: 'kick',
     pan: 0,
     volume: 100,
-    samplePath: '/audio/kick.mp3',
+    sampleUrl: '/audio/kick.mp3',
     steps: new Array<boolean>(16).fill(false),
   },
   {
     name: 'snare',
     pan: 0,
     volume: 100,
-    samplePath: '/audio/snare.mp3',
+    sampleUrl: '/audio/snare.mp3',
     steps: new Array<boolean>(16).fill(false),
   },
   {
     name: 'hihat',
     pan: 0,
     volume: 100,
-    samplePath: '/audio/hihat.mp3',
+    sampleUrl: '/audio/hihat.mp3',
     steps: new Array<boolean>(16).fill(false),
   }
 ]
 
 function App() {
-  alert('init')
-  
   const [playing, setPlaying] = useState(DEFAULT_PLAYING)
   const [bpm, setBpm] = useState(DEFAULT_BPM)
   const [swing, setSwing] = useState(DEFAULT_SWING)
@@ -88,47 +218,24 @@ function App() {
     setTracks(newTracks)
   }
 
-  // load audio buffers  
-  useEffect(() => {
-    if (!loadingAudio.current) {
-      let unloadedTracks = tracks.filter(t => !audioScheduler.sampleBuffers.has(t.name))
+  let unloadedTracks = tracks.filter(track => !sampleBuffers.has(track.name))
 
-      if (unloadedTracks.length > 0) {
-        loadingAudio.current = true
+  if (unloadedTracks.length > 0) {
+    loadingAudio.current = true
 
-        Promise
-          .all(unloadedTracks.map(track =>
-            audioScheduler.loadAudio(track.name, track.samplePath).then(() => console.log('loaded: ' + track.name)))
-          )
-          .catch(err => {
-            console.error(err)
-          })
-          .finally(() => {
-            loadingAudio.current = false
-          })
-      }
-    }
-  })
-
-  let seqAudios: SequencerAudio[]
-
-  if (playing) {
-    seqAudios = tracks.flatMap(track =>
-      track.steps
-        .filter(enabled => enabled)
-        .map((_, stepIndex): SequencerAudio => ({
-          trackName: track.name,
-          pan: track.pan,
-          volume: track.volume,
-          position: stepIndex / track.steps.length,
-        }))
-    )
-  }
-  else {
-    seqAudios = []
+    Promise
+      .all(unloadedTracks.map(track => loadAudio(track.name, track.sampleUrl)))
+      .catch(() => {
+        throw new Error('Error loading audio')
+      })
+      .finally(() => {
+        loadingAudio.current = false
+      })
   }
 
-  audioScheduler.setScheduled(seqAudios)
+  if (loadingAudio) {
+    return <div>Loading...</div>
+  }
 
   // console.log('render App')
 
@@ -142,13 +249,13 @@ function App() {
         swingChanged={value => setSwing(value)}
         playStopClicked={() => {
           if (playing) {
-            audioScheduler.start()
+            startAudioLoop(bpm, swing, tracks)
               .then(() => {
                 setPlaying(true)
               })
           }
           else {
-            audioScheduler.stop()
+            stopAudioLoop()
               .then(() => {
                 setPlaying(false)
               })
