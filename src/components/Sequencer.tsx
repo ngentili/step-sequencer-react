@@ -1,5 +1,4 @@
 import React from 'react';
-import 'sass';
 import './Sequencer.scss';
 import { StepTrack } from '../models/SequencerTrack';
 import SequencerStepTrack from './SequencerStepTrack';

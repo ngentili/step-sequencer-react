@@ -1,5 +1,4 @@
 import React from 'react';
-import 'sass';
 import './Toolbar.scss';
 
 interface ToolbarProps {

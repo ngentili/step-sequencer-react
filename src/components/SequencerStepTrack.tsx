@@ -1,5 +1,4 @@
 import React from 'react';
-import 'sass';
 import './SequencerStepTrack.scss';
 
 interface SequencerStepTrackProps {

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import 'sass';
 import './App.scss';
 import Toolbar from './Toolbar';
 import Sequencer from './Sequencer';
