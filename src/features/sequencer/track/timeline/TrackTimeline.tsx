@@ -48,19 +48,34 @@ function TrackTimeline(props: { trackIndex: number }) {
             const stepTrack = track as StepTrack
             const prevStepTrack = prevTrackRef as React.MutableRefObject<StepTrack>
 
-            const stepDelta = stepTrack.steps.length - prevStepTrack.current.steps.length
+            const stepCount = stepTrack.steps.length
+            const prevStepCount = prevStepTrack.current.steps.length
 
-            if (stepDelta > 0) {
+            const stepCountDelta = stepCount - prevStepCount
+
+            if (stepCountDelta != 0) {
+                // remove all steps from before change
+                for (let i = 0; i < prevStepCount; i++) {
+                    if (!prevStepTrack.current.steps[i].enabled) {
+                        continue
+                    }
+                    const position = i / prevStepCount
+                    audioContextManager.removeSampleFromScheduler(track.trackId, position)
+                    // TODO disable in view first (only?)
+                }
+            }
+
+            if (stepCountDelta > 0) {
                 // step(s) added
                 console.log(`step(s) added`)
                 // TODO unschedule track and reschedule with new timing
-                throw new Error('not implemented')
+                // throw new Error('not implemented')
             }
-            else if (stepDelta < 0) {
+            else if (stepCountDelta < 0) {
                 // step(s) removed
                 console.log(`step(s) removed`)
                 // TODO unschedule track and reschedule with new timing
-                throw new Error('not implemented')
+                // throw new Error('not implemented')
             }
 
             for (let i = 0; i < stepTrack.steps.length; i++) {
