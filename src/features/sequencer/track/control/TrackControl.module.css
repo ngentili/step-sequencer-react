@@ -1,0 +1,25 @@
+.trackControls {
+    display: flex;
+    flex-direction: row;
+    margin-right: 2%;
+}
+
+.trackLabel {
+    display: inline-block;
+    width: 75px;
+}
+
+.trackVolume {
+    width: 75px;
+    margin-right: 10px;
+}
+
+.trackPan {
+    width: 75px;
+    margin-left: 10px;
+}
+
+.trackStepCount {
+    width: 75px;
+    margin-left: 10px;
+}

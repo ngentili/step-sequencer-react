@@ -6,15 +6,9 @@
             "type": "firefox",
             "request": "launch",
             "reAttach": true,
-            "url": "http://localhost:3000",
+            "url": "http://localhost:5173",
             "webRoot": "${workspaceFolder}",
-            "profile": "default-release",
-            "pathMappings": [
-                {
-                    "url": "http://localhost:3000/home/nick/step-sequencer-react/src",
-                    "path": "${workspaceFolder}/src"
-                }
-            ]
+            "profile": "dev-edition-default",
         }
     ]
 }
